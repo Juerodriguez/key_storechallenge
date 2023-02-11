@@ -1,14 +1,15 @@
 from django.db import models
+from django.core import validators
 
 
 class SharedEmail(models.Model):
-    email = models.EmailField()
-    visited = models.BooleanField()
-    info_ip = models.CharField(max_length=200)
+    email = models.EmailField(validators=[validators.validate_email])
+    visited = models.BooleanField(default=False)
+    info_ip = models.CharField(max_length=100, blank=True, null=True)
 
 
 class KeyModel(models.Model):
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=100)
     password = models.CharField(max_length=10)
     shared_at = models.ForeignKey(SharedEmail, on_delete=models.CASCADE, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
