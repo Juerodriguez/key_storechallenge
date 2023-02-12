@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from .serializers import KeySerializers
 from .models import KeyModel
 from rest_framework import status
+from django.contrib.auth.hashers import make_password
 
 
 class KeyAPIView(APIView):
@@ -31,6 +32,7 @@ class KeyAPIView(APIView):
         :param format:
         :return: Json response Success || Json response error
         """
+        request.data["password"] = make_password(request.data["password"])
         serializer = KeySerializers(data=request.data)
         if serializer.is_valid():
             serializer.save()

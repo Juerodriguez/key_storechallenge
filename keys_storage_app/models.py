@@ -10,7 +10,7 @@ class SharedEmail(models.Model):
 
 class KeyModel(models.Model):
     name = models.CharField(max_length=100)
-    password = models.CharField(max_length=10)
+    password = models.CharField(max_length=100)
     shared_at = models.ForeignKey(SharedEmail, on_delete=models.CASCADE, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     modify_at = models.DateTimeField(auto_now=True)
