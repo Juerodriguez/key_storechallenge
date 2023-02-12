@@ -7,6 +7,6 @@ from .views import (
 
 urlpatterns = [
     path('key_storage/', KeyAPIView.as_view(), name='key_storage'),
-    path('key_detail/', KeyDetailAPIView.as_view(), name='key_detail'),
+    path('key_detail/<int:key_id>/', KeyDetailAPIView.as_view(), name='key_detail'),
 ]
 

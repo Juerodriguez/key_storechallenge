@@ -11,10 +11,11 @@ class KeyAPIView(APIView):
     """
     View of all keys and create a new key.
     """
-    def get(self, *args: any, **kwargs: any) -> Response:
+    def get(self, request, *args: any, **kwargs: any) -> Response:
         """
         List all keys.
 
+        :param request:
         :param args:
         :param kwargs:
         :return: Json response
@@ -41,7 +42,7 @@ class KeyAPIView(APIView):
 
 class KeyDetailAPIView(APIView):
 
-    def get(self, key_id: str, *args, **kwargs) -> Response:
+    def get(self, request, key_id, *args, **kwargs) -> Response:
         try:
             key_instance = KeyModel.objects.get(id=key_id)
             serializer = KeySerializers(key_instance)
@@ -52,12 +53,12 @@ class KeyDetailAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-    def put(self, request: {str}, key_id: str, *args, **kwargs) -> Response:
+    def patch(self, request: {str}, key_id: str, *args, **kwargs) -> Response:
         try:
             key_instance = KeyModel.objects.get(id=key_id)
             data = {
                 'name': request.data.get('name'),
-                'password': request.data.get('password'),
+                'password': make_password(request.data.get('password'))
             }
             serializer = KeySerializers(instance=key_instance, data=data, partial=True)
             if serializer.is_valid():
@@ -69,7 +70,7 @@ class KeyDetailAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-    def delete(self, key_id: str, *args, **kwargs) -> Response:
+    def delete(self, request, key_id: str, *args, **kwargs) -> Response:
         try:
             key_instance = KeyModel.objects.get(id=key_id)
             key_instance.delete()
