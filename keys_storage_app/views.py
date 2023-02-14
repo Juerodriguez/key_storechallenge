@@ -1,8 +1,8 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .serializers import KeySerializers
-from .models import KeyModel
+from .serializers import KeySerializers, ShareSerializers
+from .models import KeyModel, SharedEmail
 from rest_framework import status
 from django.contrib.auth.hashers import make_password
 
@@ -82,3 +82,42 @@ class KeyDetailAPIView(APIView):
             )
 
 
+class ShareAPIView(APIView):
+    """
+    View of all emails shared.
+    """
+    def get(self, request, *args: any, **kwargs: any) -> Response:
+        """
+        List all emails shared.
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return: Json response
+        """
+        share_instance = SharedEmail.objects.all()
+        serializer = ShareSerializers(share_instance, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request, key_id, *args, **kwargs) -> Response:
+        """
+        Save a new email shared.
+
+        :param request:
+        :param key_id:
+        :param format:
+        :return: Json response Success || Json response error
+        """
+        key_instance = KeyModel.objects.get(id=key_id)
+        serializer = ShareSerializers(data=request.data)
+
+        if serializer.is_valid():
+            serializer.save(key_related=key_instance)
+            try:
+                pass
+                #"update relation key with shared email"
+                #"send_email with password"
+            except:
+                pass
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
