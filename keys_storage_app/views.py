@@ -1,4 +1,5 @@
-from rest_framework.response import Response
+from django.core.mail import send_mail, BadHeaderError
+from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .serializers import KeySerializers, ShareSerializers
@@ -11,7 +12,7 @@ class KeyAPIView(APIView):
     """
     View of all keys and create a new key.
     """
-    def get(self, request, *args: any, **kwargs: any) -> Response:
+    def get(self, request: {str}, *args: any, **kwargs: any) -> Response:
         """
         List all keys.
 
@@ -42,7 +43,7 @@ class KeyAPIView(APIView):
 
 class KeyDetailAPIView(APIView):
 
-    def get(self, request, key_id, *args, **kwargs) -> Response:
+    def get(self, request: {str}, key_id: str, *args, **kwargs) -> Response:
         try:
             key_instance = KeyModel.objects.get(id=key_id)
             serializer = KeySerializers(key_instance)
@@ -114,10 +115,12 @@ class ShareAPIView(APIView):
         if serializer.is_valid():
             serializer.save(key_related=key_instance)
             try:
-                pass
-                #"update relation key with shared email"
-                #"send_email with password"
-            except:
-                pass
+                send_mail(subject=f"Password for {key_instance.name} key",
+                          message=f"http://127.0.0.1:8000/key_detail/email/{key_id}",
+                          from_email=settings.EMAIL_HOST_USER,
+                          recipient_list=["rodriguezjuanelias19@gmail.com"]
+                          )
+            except BadHeaderError:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
