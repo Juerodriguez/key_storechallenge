@@ -118,7 +118,7 @@ class ShareAPIView(APIView):
                 send_mail(subject=f"Password for {key_instance.name} key",
                           message=f"http://127.0.0.1:8000/key_detail/email/{key_id}",
                           from_email=settings.EMAIL_HOST_USER,
-                          recipient_list=["rodriguezjuanelias19@gmail.com"]
+                          recipient_list=[request.data["email"]]
                           )
             except BadHeaderError:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
