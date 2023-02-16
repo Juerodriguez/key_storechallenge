@@ -4,7 +4,7 @@ from django.core import validators
 
 class KeyModel(models.Model):
     name = models.CharField(max_length=100)
-    password = models.CharField(max_length=100)
+    password = models.CharField(max_length=200)
     created_at = models.DateTimeField(auto_now_add=True)
     modify_at = models.DateTimeField(auto_now=True)
 

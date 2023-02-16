@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from .serializers import KeySerializers, ShareSerializers
 from .models import KeyModel, SharedEmail
 from rest_framework import status
-from django.contrib.auth.hashers import make_password
+from .utils import encrypt, decrypt
 
 
 class KeyAPIView(APIView):
@@ -33,7 +33,7 @@ class KeyAPIView(APIView):
         :param format:
         :return: Json response Success || Json response error
         """
-        request.data["password"] = make_password(request.data["password"])
+        request.data["password"] = encrypt(request.data["password"])
         serializer = KeySerializers(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -42,6 +42,9 @@ class KeyAPIView(APIView):
 
 
 class KeyDetailAPIView(APIView):
+    """
+    Detail of Keys, update and delete
+    """
 
     def get(self, request: {str}, key_id: str, *args, **kwargs) -> Response:
         try:
@@ -59,7 +62,7 @@ class KeyDetailAPIView(APIView):
             key_instance = KeyModel.objects.get(id=key_id)
             data = {
                 'name': request.data.get('name'),
-                'password': make_password(request.data.get('password'))
+                'password': encrypt(request.data.get('password'))
             }
             serializer = KeySerializers(instance=key_instance, data=data, partial=True)
             if serializer.is_valid():
@@ -85,9 +88,9 @@ class KeyDetailAPIView(APIView):
 
 class ShareAPIView(APIView):
     """
-    View of all emails shared.
+    View of all emails shared and post option.
     """
-    def get(self, request, *args: any, **kwargs: any) -> Response:
+    def get(self, request: {str}, *args: any, **kwargs: any) -> Response:
         """
         List all emails shared.
 
@@ -115,12 +118,48 @@ class ShareAPIView(APIView):
         if serializer.is_valid():
             serializer.save(key_related=key_instance)
             try:
-                send_mail(subject=f"Password for {key_instance.name} key",
-                          message=f"http://127.0.0.1:8000/key_detail/email/{key_id}",
-                          from_email=settings.EMAIL_HOST_USER,
-                          recipient_list=[request.data["email"]]
+                email_instance = SharedEmail.objects.filter(email=request.data["email"])
+                send_mail(
+                    subject=f"Password for {key_instance.name} key",
+                    message=f"http://127.0.0.1:8000/api/v1/key_detail/decrypted/{key_id}/email_id/{email_instance[0].id}",
+                    from_email=settings.EMAIL_HOST_USER,
+                    recipient_list=[request.data["email"]]
                           )
             except BadHeaderError:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class KeyDetailDecryptedAPIView(APIView):
+    """
+    View of Key decrypted
+    """
+    def get(self, request: {str}, key_id: str, email_id: str, *args: any, **kwargs: any) -> Response:
+        """
+        View of Key decrypted.
+
+        :param key_id:
+        :param request:
+        :param args:
+        :param kwargs:
+        :return: Json response
+        """
+        try:
+            key_instance = KeyModel.objects.get(id=key_id)
+            email_instance = SharedEmail.objects.get(id=email_id)
+            client_ip = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR'))
+            data = {
+                "info_ip": client_ip,
+                "visited": True
+            }
+            serializer = ShareSerializers(instance=email_instance, data=data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+            key = decrypt(key_instance.password)
+            return Response(key, status=status.HTTP_200_OK)
+        except KeyModel.DoesNotExist:
+            return Response(
+                {"message": "Key does not exists"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
