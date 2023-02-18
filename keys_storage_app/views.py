@@ -74,7 +74,7 @@ class KeyDetailAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-    def delete(self, request, key_id: str, *args, **kwargs) -> Response:
+    def delete(self, request: {str}, key_id: str, *args, **kwargs) -> Response:
         try:
             key_instance = KeyModel.objects.get(id=key_id)
             key_instance.delete()
@@ -121,7 +121,8 @@ class ShareAPIView(APIView):
                 email_instance = SharedEmail.objects.filter(email=request.data["email"])
                 send_mail(
                     subject=f"Password for {key_instance.name} key",
-                    message=f"http://127.0.0.1:8000/api/v1/key_detail/decrypted/{key_id}/email_id/{email_instance[0].id}",
+                    message=f"http://127.0.0.1:4200/keymanager/share_email/{key_id}/"
+                            f"reveal_key/{email_instance[len(email_instance)-1].id}",
                     from_email=settings.EMAIL_HOST_USER,
                     recipient_list=[request.data["email"]]
                           )
@@ -139,6 +140,7 @@ class KeyDetailDecryptedAPIView(APIView):
         """
         View of Key decrypted.
 
+        :param email_id:
         :param key_id:
         :param request:
         :param args:
@@ -157,7 +159,10 @@ class KeyDetailDecryptedAPIView(APIView):
             if serializer.is_valid():
                 serializer.save()
             key = decrypt(key_instance.password)
-            return Response(key, status=status.HTTP_200_OK)
+            data_key = {
+                "password": key,
+            }
+            return Response(data_key, status=status.HTTP_200_OK)
         except KeyModel.DoesNotExist:
             return Response(
                 {"message": "Key does not exists"},
